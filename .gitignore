@@ -3,6 +3,7 @@
 *.mp4
 *.sketch
 *.jpg
+dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

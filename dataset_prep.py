@@ -32,8 +32,6 @@ async def google_search_and_download(q, session, offset=0, folder_name=None):
         params=params
     )
 
-    response.raise_for_status()
-
     results = await response.json()
     json.dump(results, open(f"{q}.json", 'w'))
 
