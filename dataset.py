@@ -40,7 +40,7 @@ async def download_image(image_obj, session, folder_name='', file_name=None,
                     break
                 f.write(chunk)
 
-    print(f"Downloaded {image_url['position']}")
+    print(f"Downloaded {image_obj['position']}: {image_url}")
 
 
 async def download_images_from_json(json_files, folder_names):
