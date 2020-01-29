@@ -1,0 +1,9 @@
+{
+    "keywords": "summer trees, winter trees, autumn trees, cherry blossom trees",
+    "limit": 20,
+    "type": "photo",
+    "size": "large",
+    "no_download": true,
+    "print_urls": true,
+    "chromedriver": "/usr/local/bin/chromedriver"
+}
