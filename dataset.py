@@ -1,28 +1,35 @@
 import asyncio
 import aiofiles
 import aiohttp
-import json
 import re
+import json
 import os
 
+from os import path as path
 from google_images_download import google_images_download
 from pprint import pprint
 from aiohttp import ClientSession
 from pathlib import PurePath
 
+
+# Setting path to project folder
+
+os.chdir(path.dirname(path.realpath(__file__)))
+
+
 SEARCH_CONFIG_PATH = "searchcfg.json"
+MAIN_DATASET_URL_PATH = "dataset_urls.json"
 JSON_FILES = ['summer trees.json', 'winter trees.json']
 FOLDER_NAMES = ['dataset/summer trees/', 'dataset/winter trees/']
 
 
 def url_download(argument_file):
     g = google_images_download.googleimagesdownload()
-    args = json.load(open(argument_file))
 
-    paths = g.download(args)
-    print(paths)
+    paths = g.download({"config_file": argument_file})
+    pprint(paths)
 
-    json.dump(open("dataset_urls.json", "w"), indent=2)
+    json.dump(paths[0], open("dataset_urls.json", "w"), indent=2)
 
 
 async def zenserp_search(q, session, offset=0, folder_name=None):
@@ -107,11 +114,19 @@ async def download_images_from_json(json_files, folder_names):
 
         await asyncio.gather(*tasks)
 
-if __name__ == "__main__":
-    # create_dataset_folders(FOLDER_NAMES)
-    # asyncio.run(download_images_from_json(
-    #     JSON_FILES,
-    #     FOLDER_NAMES
-    # ))
 
-    url_download(SEARCH_CONFIG_PATH)
+def parse_dataset_urls(json_file_name):
+    dataset_img_link_dict = json.load(open(json_file_name))
+    for key in dataset_img_link_dict:
+        json.dump({key: dataset_img_link_dict[key]}, open(key+".json", 'w'), indent=2)
+        print(f"Saved {key} in {key}.json!")
+
+if __name__ == "__main__":
+    parse_dataset_urls(MAIN_DATASET_URL_PATH)
+    create_dataset_folders(FOLDER_NAMES)
+    asyncio.run(download_images_from_json(
+        JSON_FILES,
+        FOLDER_NAMES
+    ))
+
+    # url_download(SEARCH_CONFIG_PATH)
