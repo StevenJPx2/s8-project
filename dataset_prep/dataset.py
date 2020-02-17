@@ -1,33 +1,42 @@
 import asyncio
 import aiofiles
-import aiohttp
+# import aiohttp
 import re
 import json
 import os
+import logging
 
 from os import path as path
 from google_images_download import google_images_download
-from pprint import pprint
+# from pprint import pprint
 from aiohttp import ClientSession
 from pathlib import PurePath
 
 
 # Setting path to project folder
-
 os.chdir(path.dirname(path.realpath(__file__)))
 
+# Setting logging file
+logging.basicConfig(
+    filename='dataset prep.log',
+    filemode='w',
+    format='%(name)s - %(levelname)s - %(message)s',
+    level=logging.ERROR
+)
 
 SEARCH_CONFIG_PATH = "searchcfg.json"
 MAIN_DATASET_URL_PATH = "dataset_urls.json"
-JSON_FILES = ['summer trees.json', 'winter trees.json']
-FOLDER_NAMES = ['dataset/summer trees/', 'dataset/winter trees/']
+JSON_FILES = ['summer trees.json', 'winter trees.json', 'autumn trees.json',
+              'cherry blossom trees.json']
+FOLDER_NAMES = ['dataset/summer trees/', 'dataset/winter trees/',
+                'dataset/autumn trees/', 'dataset/cherry blossom trees/']
 
 
 def url_download(argument_file):
     g = google_images_download.googleimagesdownload()
 
     paths = g.download({"config_file": argument_file})
-    pprint(paths)
+    logging.debug(paths)
 
     json.dump(paths[0], open("dataset_urls.json", "w"), indent=2)
 
@@ -71,16 +80,21 @@ async def download_image(image_obj, session, folder_name='', file_name=None,
                          chunk_size=100, sem=None):
 
     async with sem:
-        pprint(image_obj)
+        logging.debug(image_obj)
         image_url = image_obj["sourceUrl"]
 
         try:
             async with session.get(image_url, verify_ssl=False) as resp:
                 file_suffix = PurePath(image_url).suffix or ".jpg"
-                file_suffix = re.sub(r"[?&].*", "", file_suffix)
+                file_suffix = re.sub(r"[?&!].*", "", file_suffix)
+                file_suffix = file_suffix if file_suffix.isalpha()\
+                    else ".jpg"
+
+                file_name = f"{folder_name}{file_name or image_obj['position']}\
+{file_suffix}"
 
                 async with aiofiles.open(
-                    f"{folder_name}{file_name or image_obj['position']}{file_suffix}",
+                    file_name,
                     "wb"
                 ) as f:
 
@@ -89,9 +103,9 @@ async def download_image(image_obj, session, folder_name='', file_name=None,
                         if not chunk:
                             break
                         await f.write(chunk)
-        except aiohttp.client_exceptions.ClientConnectorError as e:
-            print(image_url, e)
-        print(f"Downloaded {image_obj['position']}: {image_url}")
+        except Exception as e:
+            logging.error(image_url, e)
+        logging.info(f"Downloaded {image_obj['position']}: {image_url}")
 
 
 async def download_images_from_json(json_files, folder_names):
@@ -109,7 +123,7 @@ async def download_images_from_json(json_files, folder_names):
 
             for index in range(len(json_files))
             for image_obj in
-            json.load(open(json_files[index], 'r'))['image_results'][:10]
+            json.load(open(json_files[index], 'r'))
         ]
 
         await asyncio.gather(*tasks)
@@ -118,11 +132,18 @@ async def download_images_from_json(json_files, folder_names):
 def parse_dataset_urls(json_file_name):
     dataset_img_link_dict = json.load(open(json_file_name))
     for key in dataset_img_link_dict:
-        json.dump({key: dataset_img_link_dict[key]}, open(key+".json", 'w'), indent=2)
+        value = [
+            {"position": index,
+             "sourceUrl": dataset_img_link_dict[key][index]}
+            for index in range(len(dataset_img_link_dict[key]))
+        ]
+
+        json.dump(value, open(key+".json", 'w'), indent=2)
         print(f"Saved {key} in {key}.json!")
 
+
 if __name__ == "__main__":
-    parse_dataset_urls(MAIN_DATASET_URL_PATH)
+    # parse_dataset_urls(MAIN_DATASET_URL_PATH)
     create_dataset_folders(FOLDER_NAMES)
     asyncio.run(download_images_from_json(
         JSON_FILES,
