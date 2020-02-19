@@ -46,17 +46,19 @@ for date in dates:
 
     # OPENING ZIPPED FILE
     archive_path = f"images/{date}_lb3.tar.gz"
+    folder_path = archive_path.replace('.tar.gz', '')+"/"
 
-    with tarfile.TarFile(archive_path) as f:
-        folder_path = archive_path.split('.')[0]
+    with tarfile.open(archive_path, 'r:gz') as f:
         f.extractall(folder_path)
 
     subprocess.call(['rm', archive_path])
 
     # UPLOADING TO S3
-    subprocess.call([
-        'aws s3 cp',
-        folder_path,
-        f"s3://project-vae/nclt/{folder_path}"
-        ])
-    subprocess.call(['rm -r', folder_path])
+    for image in os.listdir(folder_path):
+        cmd = [
+               'aws', 's3', 'cp',
+               folder_path+image,
+               f"s3://project-vae/nclt/{folder_path}"
+              ]
+        subprocess.call(" ".join(cmd), shell=True)
+    subprocess.call('rm -r '+folder_path, shell=True)
