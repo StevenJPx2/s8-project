@@ -39,7 +39,7 @@ dates = [
 os.makedirs('images', exist_ok=True)
 for date in dates:
     cmd = ['wget', '--continue',
-           '%s/images/%s_lb3.tar.gz' % (base_dir, date),
+           f'{base_dir}/images/{date}_lb3.tar.gz',
            '-P', 'images']
     print("Calling: ", ' '.join(cmd))
     subprocess.call(cmd)
