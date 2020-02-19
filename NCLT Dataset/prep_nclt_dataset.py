@@ -46,7 +46,7 @@ for date in dates:
 
     # OPENING ZIPPED FILE
     archive_path = f"images/{date}_lb3.tar.gz"
-    folder_path = archive_path.replace('.tar.gz', '')+"/"
+    folder_path = archive_path.replace('.tar.gz', '/')
 
     with tarfile.open(archive_path, 'r:gz') as f:
         f.extractall(folder_path)
