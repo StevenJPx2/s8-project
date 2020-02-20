@@ -1,6 +1,14 @@
 import os
 import subprocess
 import tarfile
+import logging
+
+logging.basicConfig(
+    filename='dataset prep.log',
+    filemode='w',
+    format='%(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 # DOWNLOAD IMAGES
 
@@ -41,7 +49,7 @@ for date in dates:
     cmd = ['wget', '--continue',
            f'{base_dir}/images/{date}_lb3.tar.gz',
            '-P', 'images']
-    print("Calling: ", ' '.join(cmd))
+    logging.info("Calling: ", ' '.join(cmd))
     subprocess.call(cmd)
 
     # OPENING ZIPPED FILE
@@ -51,7 +59,9 @@ for date in dates:
     with tarfile.open(archive_path, 'r:gz') as f:
         f.extractall(folder_path)
 
+    logging.info(f'Extracted {archive_path} -> {folder_path}')
     subprocess.call(['rm', archive_path])
+    logging.info(f'Removed {archive_path}')
 
     # UPLOADING TO S3
     for image in os.listdir(folder_path):
@@ -60,5 +70,13 @@ for date in dates:
                folder_path+image,
                f"s3://project-vae/nclt/{folder_path}"
               ]
+
+        logging.debug(
+            f'Uploading {folder_path+image} \
+-> s3://project-vae/nclt/{folder_path}')
         subprocess.call(" ".join(cmd), shell=True)
+
+    logging.info(f'Uploaded all {folder_path} images')
+
     subprocess.call('rm -r '+folder_path, shell=True)
+    logging.info(f'Removed {folder_path} directory')
