@@ -49,7 +49,7 @@ for date in dates:
     cmd = ['wget', '--continue',
            f'{base_dir}/images/{date}_lb3.tar.gz',
            '-P', 'images']
-    logging.info("Calling: ", ' '.join(cmd))
+    logging.info("Calling: "+' '.join(cmd))
     subprocess.call(cmd)
 
     # OPENING ZIPPED FILE
