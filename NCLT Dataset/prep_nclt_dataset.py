@@ -44,6 +44,30 @@ dates = [
     '2013-04-05'
 ]
 
+
+def travel_dir(dir_name):
+    for path in os.listdir(dir_name):
+        full_path = os.path.join(dir_name, path)
+        if not os.path.isdir(full_path):
+            cmd = [
+                   'aws', 's3', 'cp',
+                   full_path,
+                   f"s3://project-vae/nclt/{os.path.dirname(full_path)}"
+                  ]
+
+            logging.debug(
+                f'Uploading {full_path} \
+-> s3://project-vae/nclt/{os.path.dirname(full_path)}'
+            )
+            subprocess.call(" ".join(cmd), shell=True)
+            logging.debug(
+                f'Uploaded {full_path} \
+-> s3://project-vae/nclt/{os.path.dirname(full_path)}'
+            )
+        else:
+            travel_dir(full_path)
+
+
 os.makedirs('images', exist_ok=True)
 for date in dates:
     cmd = ['wget', '--continue',
@@ -57,26 +81,23 @@ for date in dates:
     folder_path = archive_path.replace('.tar.gz', '/')
 
     with tarfile.open(archive_path, 'r:gz') as f:
+        logging.info(f"Extracting {archive_path} -> {folder_path}")
         f.extractall(folder_path)
 
     logging.info(f'Extracted {archive_path} -> {folder_path}')
+    ######################
+
+    # REMOVING ZIPPED FILE AFTER EXTRACTION
     subprocess.call(['rm', archive_path])
     logging.info(f'Removed {archive_path}')
+    #####################
 
     # UPLOADING TO S3
-    for image in os.listdir(folder_path):
-        cmd = [
-               'aws', 's3', 'cp',
-               folder_path+image,
-               f"s3://project-vae/nclt/{folder_path}"
-              ]
-
-        logging.debug(
-            f'Uploading {folder_path+image} \
--> s3://project-vae/nclt/{folder_path}')
-        subprocess.call(" ".join(cmd), shell=True)
-
+    travel_dir(folder_path)
     logging.info(f'Uploaded all {folder_path} images')
+    ##################
 
+    # REMOVING UNZIPPED FOLDER
     subprocess.call('rm -r '+folder_path, shell=True)
     logging.info(f'Removed {folder_path} directory')
+    ##########################
