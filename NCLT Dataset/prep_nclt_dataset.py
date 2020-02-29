@@ -49,55 +49,60 @@ def travel_dir(dir_name):
     for path in os.listdir(dir_name):
         full_path = os.path.join(dir_name, path)
         if not os.path.isdir(full_path):
+            s3_path = f"s3://project-vae/nclt/{full_path.split('/')[-1]}"
             cmd = [
                    'aws', 's3', 'cp',
                    full_path,
-                   f"s3://project-vae/nclt/{os.path.dirname(full_path)}"
+                   s3_path
                   ]
 
             logging.debug(
                 f'Uploading {full_path} \
--> s3://project-vae/nclt/{os.path.dirname(full_path)}'
+-> {s3_path}'
             )
             subprocess.call(" ".join(cmd), shell=True)
             logging.debug(
                 f'Uploaded {full_path} \
--> s3://project-vae/nclt/{os.path.dirname(full_path)}'
+-> {s3_path}'
             )
         else:
             travel_dir(full_path)
 
 
 os.makedirs('images', exist_ok=True)
-for date in dates:
-    cmd = ['wget', '--continue',
-           f'{base_dir}/images/{date}_lb3.tar.gz',
-           '-P', 'images']
-    logging.info("Calling: "+' '.join(cmd))
-    subprocess.call(cmd)
+try:
+    for date in dates:
+        cmd = ['wget', '--continue',
+               f'{base_dir}/images/{date}_lb3.tar.gz',
+               '-P', 'images']
+        logging.info("Calling: "+' '.join(cmd))
+        subprocess.call(cmd)
 
-    # OPENING ZIPPED FILE
-    archive_path = f"images/{date}_lb3.tar.gz"
-    folder_path = archive_path.replace('.tar.gz', '/')
+        # OPENING ZIPPED FILE
+        archive_path = f"images/{date}_lb3.tar.gz"
+        folder_path = archive_path.replace('.tar.gz', '/')
 
-    with tarfile.open(archive_path, 'r:gz') as f:
-        logging.info(f"Extracting {archive_path} -> {folder_path}")
-        f.extractall(folder_path)
+        with tarfile.open(archive_path, 'r:gz') as f:
+            logging.info(f"Extracting {archive_path} -> {folder_path}")
+            f.extractall(folder_path)
 
-    logging.info(f'Extracted {archive_path} -> {folder_path}')
-    ######################
+        logging.info(f'Extracted {archive_path} -> {folder_path}')
+        ######################
 
-    # REMOVING ZIPPED FILE AFTER EXTRACTION
-    subprocess.call(['rm', archive_path])
-    logging.info(f'Removed {archive_path}')
-    #####################
+        # REMOVING ZIPPED FILE AFTER EXTRACTION
+        subprocess.call(['rm', archive_path])
+        logging.info(f'Removed {archive_path}')
+        #####################
 
-    # UPLOADING TO S3
-    travel_dir(folder_path)
-    logging.info(f'Uploaded all {folder_path} images')
-    ##################
+        # UPLOADING TO S3
+        travel_dir(folder_path)
+        logging.info(f'Uploaded all {folder_path} images')
+        ##################
 
-    # REMOVING UNZIPPED FOLDER
-    subprocess.call('rm -r '+folder_path, shell=True)
-    logging.info(f'Removed {folder_path} directory')
-    ##########################
+        # REMOVING UNZIPPED FOLDER
+        subprocess.call('rm -r '+folder_path, shell=True)
+        logging.info(f'Removed {folder_path} directory')
+        ##########################
+
+except Exception as e:
+    logging.error(e)
