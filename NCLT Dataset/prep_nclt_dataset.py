@@ -45,11 +45,12 @@ dates = [
 ]
 
 
-def travel_dir(dir_name):
+def travel_dir(dir_name, date):
     for path in os.listdir(dir_name):
         full_path = os.path.join(dir_name, path)
         if not os.path.isdir(full_path):
-            s3_path = f"s3://project-vae/nclt/{full_path.split('/')[-1]}"
+            s3_path = f"s3://project-vae/nclt/\
+{date}/{full_path.split('/')[-1]}"
             cmd = [
                    'aws', 's3', 'cp',
                    full_path,
@@ -95,7 +96,7 @@ try:
         #####################
 
         # UPLOADING TO S3
-        travel_dir(folder_path)
+        travel_dir(folder_path, date)
         logging.info(f'Uploaded all {folder_path} images')
         ##################
 
