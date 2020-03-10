@@ -15,7 +15,7 @@ logging.basicConfig(
 base_dir = 'http://robots.engin.umich.edu/nclt'
 
 dates = [
-    '2012-01-08',
+#    '2012-01-08',
     '2012-01-15',
     '2012-01-22',
     '2012-02-02',
@@ -67,7 +67,7 @@ def travel_dir(dir_name, date):
 -> {s3_path}'
             )
         else:
-            travel_dir(full_path)
+            travel_dir(full_path, date)
 
 
 os.makedirs('images', exist_ok=True)
@@ -107,3 +107,4 @@ try:
 
 except Exception as e:
     logging.error(e)
+
