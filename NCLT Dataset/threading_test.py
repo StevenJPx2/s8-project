@@ -6,7 +6,7 @@ import subprocess
 
 store_dir_name = "lol"
 
-full_path = os.path.join(os.getcwd(), store_dir_name+"/")
+full_path = os.path.join(os.getcwd(), store_dir_name + "/")
 
 links = [
     "www.google.com",
@@ -18,20 +18,20 @@ links = [
     "www.microsoft.com",
     "docs.google.com",
     "accounts.google.com",
-    "www.mozilla.org"
+    "www.mozilla.org",
 ]
 
-links = list(map(lambda x: "https://"+x, links))
+links = list(map(lambda x: "https://" + x, links))
 
 
-def thread_fn(name='', fn=None, *args, **kwargs):
-    print(f'Starting worker: {name}')
+def thread_fn(name="", fn=None, *args, **kwargs):
+    print(f"Starting worker: {name}")
     if fn is None:
         time.sleep(2)
     else:
         print(f"{fn}{args}{kwargs}")
         fn(*args, **kwargs)
-    print(f'\nExiting worker: {name}')
+    print(f"\nExiting worker: {name}")
 
 
 if __name__ == "__main__":
@@ -39,12 +39,7 @@ if __name__ == "__main__":
     os.chdir(full_path)
     timer_start = time.perf_counter()
     with cf.ThreadPoolExecutor(max_workers=4) as e:
-        e.map(
-            thread_fn,
-            range(10),
-            [wget.download]*10,
-            links
-            )
+        e.map(thread_fn, range(10), [wget.download] * 10, links)
     timer_diff = time.perf_counter() - timer_start
     print(timer_diff)
     subprocess.call("rm -rf *", shell=True)
