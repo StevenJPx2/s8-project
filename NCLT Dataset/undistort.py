@@ -24,15 +24,18 @@ class Undistort(object):
             # chunks = f.readline().rstrip().split(' ')
             header = f.readline().rstrip()
             chunks = re.sub(r"[^0-9,]", "", header).split(",")
-            self.mapu = np.zeros((int(chunks[1]), int(chunks[0])), dtype=np.float32)
-            self.mapv = np.zeros((int(chunks[1]), int(chunks[0])), dtype=np.float32)
+            self.mapu = np.zeros((int(chunks[1]), int(chunks[0])),
+                                 dtype=np.float32)
+            self.mapv = np.zeros((int(chunks[1]), int(chunks[0])),
+                                 dtype=np.float32)
             for line in f.readlines():
                 chunks = line.rstrip().split(" ")
                 self.mapu[int(chunks[0]), int(chunks[1])] = float(chunks[3])
                 self.mapv[int(chunks[0]), int(chunks[1])] = float(chunks[2])
         # generate a mask
         self.mask = np.ones(self.mapu.shape, dtype=np.uint8)
-        self.mask = cv2.remap(self.mask, self.mapu, self.mapv, cv2.INTER_LINEAR)
+        self.mask = cv2.remap(self.mask, self.mapu, self.mapv,
+                              cv2.INTER_LINEAR)
         kernel = np.ones((30, 30), np.uint8)
         self.mask = cv2.erode(self.mask, kernel, iterations=1)
 
@@ -45,8 +48,11 @@ class Undistort(object):
         if fmask:
             mask = cv2.cvtColor(cv2.imread(fmask), cv2.COLOR_BGR2GRAY)
             self.mask = self.mask & mask
-        new_shape = (int(self.mask.shape[1] * scale), int(self.mask.shape[0] * scale))
-        self.mask = cv2.resize(self.mask, new_shape, interpolation=cv2.INTER_CUBIC)
+        new_shape = (int(self.mask.shape[1] * scale),
+                     int(self.mask.shape[0] * scale))
+        self.mask = cv2.resize(self.mask,
+                               new_shape,
+                               interpolation=cv2.INTER_CUBIC)
         # plt.figure(1)
         # plt.imshow(self.mask, cmap='gray')
         # plt.show()
@@ -65,8 +71,14 @@ class Undistort(object):
 
 def main():
     parser = argparse.ArgumentParser(description="Undistort images")
-    parser.add_argument("image", metavar="img", type=str, help="image to undistort")
-    parser.add_argument("map", metavar="map", type=str, help="undistortion map")
+    parser.add_argument("image",
+                        metavar="img",
+                        type=str,
+                        help="image to undistort")
+    parser.add_argument("map",
+                        metavar="map",
+                        type=str,
+                        help="undistortion map")
 
     args = parser.parse_args()
 

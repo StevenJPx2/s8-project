@@ -9,7 +9,6 @@ for folder in ["camera0", "summer_icra_dataset"]:
     for image in os.listdir(full_path):
         os.system(f"mv '{full_path}/{image}' '{PARENT_PATH}/summer/'")
 
-
 # PREPARING WINTER DATASET
 for folder in ["winter_icra_dataset"]:
     full_path = os.path.join(PARENT_PATH, folder)

@@ -12,24 +12,25 @@ from google_images_download import google_images_download
 from aiohttp import ClientSession
 from pathlib import PurePath
 
-
 # Setting path to project folder
 os.chdir(path.dirname(path.realpath(__file__)))
 
 # Setting logging file
-logging.basicConfig(
-    filename='dataset prep.log',
-    filemode='w',
-    format='%(name)s - %(levelname)s - %(message)s',
-    level=logging.ERROR
-)
+logging.basicConfig(filename='dataset prep.log',
+                    filemode='w',
+                    format='%(name)s - %(levelname)s - %(message)s',
+                    level=logging.ERROR)
 
 SEARCH_CONFIG_PATH = "searchcfg.json"
 MAIN_DATASET_URL_PATH = "dataset_urls.json"
-JSON_FILES = ['summer trees.json', 'winter trees.json', 'autumn trees.json',
-              'cherry blossom trees.json']
-FOLDER_NAMES = ['dataset/summer trees/', 'dataset/winter trees/',
-                'dataset/autumn trees/', 'dataset/cherry blossom trees/']
+JSON_FILES = [
+    'summer trees.json', 'winter trees.json', 'autumn trees.json',
+    'cherry blossom trees.json'
+]
+FOLDER_NAMES = [
+    'dataset/summer trees/', 'dataset/winter trees/', 'dataset/autumn trees/',
+    'dataset/cherry blossom trees/'
+]
 
 
 def url_download(argument_file):
@@ -50,18 +51,11 @@ async def zenserp_search(q, session, offset=0, folder_name=None):
 
     headers = {"apikey": os.getenv("ZENSERP_KEY")}
 
-    params = (
-        ("q", folder_name),
-        ("device", "desktop"),
-        ("tbm", "isch"),
-        ("start", "")
-        ("tbs", "itp:photo,isz:l")
-    )
-    async with session.get(
-        url="https://app.zenserp.com/api/v2/search",
-        headers=headers,
-        params=params
-    ) as response:
+    params = (("q", folder_name), ("device", "desktop"), ("tbm", "isch"),
+              ("start", "")("tbs", "itp:photo,isz:l"))
+    async with session.get(url="https://app.zenserp.com/api/v2/search",
+                           headers=headers,
+                           params=params) as response:
 
         results = await response.json()
 
@@ -76,8 +70,12 @@ def create_dataset_folders(folder_names):
         os.makedirs(folder_name, exist_ok=True)
 
 
-async def download_image(image_obj, session, folder_name='', file_name=None,
-                         chunk_size=100, sem=None):
+async def download_image(image_obj,
+                         session,
+                         folder_name='',
+                         file_name=None,
+                         chunk_size=100,
+                         sem=None):
 
     async with sem:
         logging.debug(image_obj)
@@ -93,10 +91,7 @@ async def download_image(image_obj, session, folder_name='', file_name=None,
                 file_name = f"{folder_name}{file_name or image_obj['position']}\
 {file_suffix}"
 
-                async with aiofiles.open(
-                    file_name,
-                    "wb"
-                ) as f:
+                async with aiofiles.open(file_name, "wb") as f:
 
                     while True:
                         chunk = await resp.content.read(chunk_size)
@@ -114,16 +109,11 @@ async def download_images_from_json(json_files, folder_names):
     sem = asyncio.Semaphore(50)
     async with ClientSession() as session:
         tasks = [
-            download_image(
-                image_obj,
-                session,
-                folder_name=folder_names[index],
-                sem=sem
-            )
-
-            for index in range(len(json_files))
-            for image_obj in
-            json.load(open(json_files[index], 'r'))
+            download_image(image_obj,
+                           session,
+                           folder_name=folder_names[index],
+                           sem=sem) for index in range(len(json_files))
+            for image_obj in json.load(open(json_files[index], 'r'))
         ]
 
         await asyncio.gather(*tasks)
@@ -132,22 +122,18 @@ async def download_images_from_json(json_files, folder_names):
 def parse_dataset_urls(json_file_name):
     dataset_img_link_dict = json.load(open(json_file_name))
     for key in dataset_img_link_dict:
-        value = [
-            {"position": index,
-             "sourceUrl": dataset_img_link_dict[key][index]}
-            for index in range(len(dataset_img_link_dict[key]))
-        ]
+        value = [{
+            "position": index,
+            "sourceUrl": dataset_img_link_dict[key][index]
+        } for index in range(len(dataset_img_link_dict[key]))]
 
-        json.dump(value, open(key+".json", 'w'), indent=2)
+        json.dump(value, open(key + ".json", 'w'), indent=2)
         print(f"Saved {key} in {key}.json!")
 
 
 if __name__ == "__main__":
     # parse_dataset_urls(MAIN_DATASET_URL_PATH)
     create_dataset_folders(FOLDER_NAMES)
-    asyncio.run(download_images_from_json(
-        JSON_FILES,
-        FOLDER_NAMES
-    ))
+    asyncio.run(download_images_from_json(JSON_FILES, FOLDER_NAMES))
 
     # url_download(SEARCH_CONFIG_PATH)

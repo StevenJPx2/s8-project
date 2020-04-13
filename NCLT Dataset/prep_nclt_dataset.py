@@ -45,8 +45,7 @@ dates = [
 ]
 
 dates = [
-    "2012-03-17",  # Spring
-    "2012-04-29",
+    "2012-04-29",  # Spring
     "2012-06-15",  # Summer
     "2012-08-04",
     "2012-09-28",  # Autumn
@@ -61,17 +60,14 @@ def travel_dir(dir_name, date):
         if not os.path.isdir(full_path):
             s3_path = f"s3://project-vae/nclt/\
 {date}/{full_path.split('/')[-1]}"
+
             cmd = ["aws", "s3", "cp", full_path, s3_path]
 
-            logging.debug(
-                f"Uploading {full_path} \
--> {s3_path}"
-            )
+            logging.debug(f"Uploading {full_path} \
+-> {s3_path}")
             subprocess.call(" ".join(cmd), shell=True)
-            logging.debug(
-                f"Uploaded {full_path} \
--> {s3_path}"
-            )
+            logging.debug(f"Uploaded {full_path} \
+-> {s3_path}")
         else:
             travel_dir(full_path, date)
 
