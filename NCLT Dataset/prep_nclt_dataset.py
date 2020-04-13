@@ -15,7 +15,7 @@ logging.basicConfig(
 base_dir = "http://robots.engin.umich.edu/nclt"
 
 dates = [
-    #    '2012-01-08',
+    '2012-01-08',
     "2012-01-15",
     "2012-01-22",
     "2012-02-02",
