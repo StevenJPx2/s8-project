@@ -35,9 +35,15 @@ def download_s3_data():
 
 
 
-# download_s3_data()
+download_s3_data()
 
 objects = json.load(open('all_images.json', 'r'))
+
+for obj in objects:
+    print(len(objects[obj]))
+
+raise SystemExit
+
 
 for obj in objects:
     try:

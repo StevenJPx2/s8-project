@@ -45,7 +45,6 @@ dates = [
 ]
 
 dates = [
-    "2012-04-29",  # Spring
     "2012-06-15",  # Summer
     "2012-08-04",
     "2012-09-28",  # Autumn
@@ -54,7 +53,7 @@ dates = [
 ]
 
 
-def travel_dir(dir_name, date):
+def travel_dir(dir_name, date, count=0):
     for path in os.listdir(dir_name):
         full_path = os.path.join(dir_name, path)
         if not os.path.isdir(full_path):
@@ -65,11 +64,15 @@ def travel_dir(dir_name, date):
 
             logging.debug(f"Uploading {full_path} \
 -> {s3_path}")
-            subprocess.call(" ".join(cmd), shell=True)
+            if count > 21000:
+                subprocess.call(" ".join(cmd), shell=True)
+            else:
+                return
+            count += 1
             logging.debug(f"Uploaded {full_path} \
 -> {s3_path}")
         else:
-            travel_dir(full_path, date)
+            travel_dir(full_path, date, count)
 
 
 os.makedirs("images", exist_ok=True)
