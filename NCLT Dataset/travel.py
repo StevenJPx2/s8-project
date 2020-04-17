@@ -8,6 +8,7 @@ def travel_dir(dir_name, date, count=0, cmd_list=None):
         cmd_list = []
     for path in os.listdir(dir_name):
         full_path = os.path.join(dir_name, path)
+        print(full_path)
         if not os.path.isdir(full_path):
             s3_path = f"s3://project-vae/nclt/\
 {date}/{full_path.split('/')[-1]}"
@@ -17,10 +18,10 @@ def travel_dir(dir_name, date, count=0, cmd_list=None):
             if count < 21000:
                 cmd_list.append(cmd)
             else:
-                break
+                return cmd_list
             count += 1
         else:
-            return travel_dir(full_path, date, count, cmd_list)
+            travel_dir(full_path, date, count, cmd_list)
 
     return cmd_list
 

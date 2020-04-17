@@ -70,12 +70,12 @@ def travel_dir(dir_name, date, count=0, cmd_list=None):
             if count < 21000:
                 cmd_list.append(cmd)
             else:
-                break
+                return cmd_list
             count += 1
             logging.debug(f"Uploaded {full_path} \
 -> {s3_path}")
         else:
-            return travel_dir(full_path, date, count, cmd_list)
+            travel_dir(full_path, date, count, cmd_list)
 
     return cmd_list
 
