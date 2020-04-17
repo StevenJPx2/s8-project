@@ -2,6 +2,7 @@ import os
 import subprocess
 import tarfile
 import logging
+import concurrent.futures as cf
 
 logging.basicConfig(
     filename="dataset prep.log",
@@ -53,7 +54,9 @@ dates = [
 ]
 
 
-def travel_dir(dir_name, date, count=0):
+def travel_dir(dir_name, date, count=0, cmd_list=None):
+    if cmd_list is None:
+        cmd_list = []
     for path in os.listdir(dir_name):
         full_path = os.path.join(dir_name, path)
         if not os.path.isdir(full_path):
@@ -64,15 +67,17 @@ def travel_dir(dir_name, date, count=0):
 
             logging.debug(f"Uploading {full_path} \
 -> {s3_path}")
-            if count > 21000:
-                subprocess.call(" ".join(cmd), shell=True)
+            if count < 21000:
+                cmd_list.append(cmd)
             else:
-                return
+                break
             count += 1
             logging.debug(f"Uploaded {full_path} \
 -> {s3_path}")
         else:
-            travel_dir(full_path, date, count)
+            return travel_dir(full_path, date, count, cmd_list)
+
+    return cmd_list
 
 
 os.makedirs("images", exist_ok=True)
@@ -105,7 +110,9 @@ try:
         #####################
 
         # UPLOADING TO S3
-        travel_dir(os.path.abspath(folder_path), date)
+        cmd_list = travel_dir(os.path.abspath(folder_path), date)
+        with cf.ThreadPoolExecutor(max_workers=100) as e:
+            e.map(lambda x: subprocess.call(x, shell=True), cmd_list)
         logging.info(f"Uploaded all {folder_path} images")
         ##################
 
