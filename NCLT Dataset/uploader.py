@@ -10,7 +10,7 @@ import boto3
 
 BASE_DIR = "https://project-vae.s3-us-west-2.amazonaws.com/"
 
-MAX_COUNT = 5
+MAX_COUNT = 2500
 MAX_WORKERS = 100
 
 s3 = boto3.resource("s3")
@@ -50,6 +50,7 @@ def download_s3_data():
             objects[date] = job.result()
 
     json.dump(objects, open("all_images.json", "w"), indent=2)
+    return objects
 
 
 def download_all(objects, MAX_COUNT=MAX_COUNT, MAX_WORKERS=MAX_WORKERS):
@@ -100,24 +101,25 @@ if __name__ == "__main__":
 
     st_ti = time.perf_counter()
 
-    imgs_per_sec = 0
-    cycles = 1
-    date = "2012-10-28"
+    # imgs_per_sec = 0
+    # cycles = 1
+    # date = "2012-11-04"
 
-    for _ in range(cycles):
-        _1st_time, _1st_value = get_len_of_date(date)
-        _2nd_time, _2nd_value = get_len_of_date(date)
+    # for _ in range(cycles):
+    #     _1st_time, _1st_value = get_len_of_date(date)
+    #     _2nd_time, _2nd_value = get_len_of_date(date)
 
-        n = _2nd_value - _1st_value
-        d = _2nd_time - _1st_time
+    #     n = _2nd_value - _1st_value
+    #     d = _2nd_time - _1st_time
 
-        imgs_per_sec = rolling_average(imgs_per_sec, n, d)
+    #     imgs_per_sec = rolling_average(imgs_per_sec, n, d)
 
-        print(f"{_1st_time=}, {_1st_value=}")
-        print(f"{_2nd_time=}, {_2nd_value=}\n===\n{imgs_per_sec=}")
+    #     print(f"{_1st_time=}, {_1st_value=}")
+    #     print(f"{_2nd_time=}, {_2nd_value=}\n===\n{imgs_per_sec=}")
 
-    print(f"\nFinal {imgs_per_sec=}\nafter {cycles} cycle(s).")
+    # print(f"\nFinal {imgs_per_sec=}\nafter {cycles} cycle(s).")
 
+    objects = json.load(open("all_images.json", "r"))
+    download_all(objects)
     print(f"{(time.perf_counter() - st_ti)/60:3f} minutes")
 
-    # download_all(objects)
