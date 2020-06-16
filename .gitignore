@@ -3,10 +3,11 @@
 *.mp4
 *.sketch
 *.jpg
+*.tiff
 /dataset_prep/dataset/
 *.zip
 *.tar
-/NCLT Dataset/startup_script_aws.sh
+NCLT\ Dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
