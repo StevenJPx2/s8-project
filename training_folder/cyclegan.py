@@ -19,7 +19,9 @@ IMG_WIDTH = 256
 IMG_HEIGHT = 256
 OUTPUT_CHANNELS = 3
 LAMBDA = 10
-EPOCHS = 40
+EPOCHS = 200
+# checkpoint_path = "../Outputs/checkpoints/train"
+checkpoint_path = "./checkpoints/train"
 
 
 tfds.disable_progress_bar()
@@ -28,8 +30,8 @@ dataset, metadata = tfds.load(
     "cycle_gan/summer2winter_yosemite", with_info=True, as_supervised=True,
 )
 
-train_horses, train_zebras = dataset["trainA"], dataset["trainB"]
-test_horses, test_zebras = dataset["testA"], dataset["testB"]
+train_summer, train_winter = dataset["trainA"], dataset["trainB"]
+test_summer, test_winter = dataset["testA"], dataset["testB"]
 
 
 def random_jitter(image):
@@ -64,90 +66,39 @@ def preprocess_image_test(image, label):
     return image
 
 
-train_horses = (
-    train_horses.map(preprocess_image_train, num_parallel_calls=AUTOTUNE)
+train_summer = (
+    train_summer.map(preprocess_image_train, num_parallel_calls=AUTOTUNE)
     .cache()
     .shuffle(BUFFER_SIZE)
     .batch(1)
 )
 
-train_zebras = (
-    train_zebras.map(preprocess_image_train, num_parallel_calls=AUTOTUNE)
+train_winter = (
+    train_winter.map(preprocess_image_train, num_parallel_calls=AUTOTUNE)
     .cache()
     .shuffle(BUFFER_SIZE)
     .batch(1)
 )
 
-test_horses = (
-    test_horses.map(preprocess_image_test, num_parallel_calls=AUTOTUNE)
+test_summer = (
+    test_summer.map(preprocess_image_test, num_parallel_calls=AUTOTUNE)
     .cache()
     .shuffle(BUFFER_SIZE)
     .batch(1)
 )
 
-test_zebras = (
-    test_zebras.map(preprocess_image_test, num_parallel_calls=AUTOTUNE)
+test_winter = (
+    test_winter.map(preprocess_image_test, num_parallel_calls=AUTOTUNE)
     .cache()
     .shuffle(BUFFER_SIZE)
     .batch(1)
 )
-
-sample_horse = next(iter(train_horses))
-sample_zebra = next(iter(train_zebras))
-
-plt.subplot(121)
-plt.title("Horse")
-plt.imshow(sample_horse[0] * 0.5 + 0.5)
-
-plt.subplot(122)
-plt.title("Horse with random jitter")
-plt.imshow(random_jitter(sample_horse[0]) * 0.5 + 0.5)
-
-plt.subplot(121)
-plt.title("Zebra")
-plt.imshow(sample_zebra[0] * 0.5 + 0.5)
-
-plt.subplot(122)
-plt.title("Zebra with random jitter")
-plt.imshow(random_jitter(sample_zebra[0]) * 0.5 + 0.5)
-
 
 generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type="instancenorm")
 generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type="instancenorm")
 
 discriminator_x = pix2pix.discriminator(norm_type="instancenorm", target=False)
 discriminator_y = pix2pix.discriminator(norm_type="instancenorm", target=False)
-
-
-to_zebra = generator_g(sample_horse)
-to_horse = generator_f(sample_zebra)
-plt.figure(figsize=(8, 8))
-contrast = 8
-
-imgs = [sample_horse, to_zebra, sample_zebra, to_horse]
-title = ["Horse", "To Zebra", "Zebra", "To Horse"]
-
-for i in range(len(imgs)):
-    plt.subplot(2, 2, i + 1)
-    plt.title(title[i])
-    if i % 2 == 0:
-        plt.imshow(imgs[i][0] * 0.5 + 0.5)
-    else:
-        plt.imshow(imgs[i][0] * 0.5 * contrast + 0.5)
-plt.savefig("Initial ")
-
-
-plt.figure(figsize=(8, 8))
-
-plt.subplot(121)
-plt.title("Is a real zebra?")
-plt.imshow(discriminator_y(sample_zebra)[0, ..., -1], cmap="RdBu_r")
-
-plt.subplot(122)
-plt.title("Is a real horse?")
-plt.imshow(discriminator_x(sample_horse)[0, ..., -1], cmap="RdBu_r")
-
-plt.show()
 
 
 loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True)
@@ -184,8 +135,6 @@ generator_f_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_x_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_y_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 
-
-checkpoint_path = "./checkpoints/train"
 
 ckpt = tf.train.Checkpoint(
     generator_g=generator_g,
@@ -224,7 +173,7 @@ def generate_images(model, test_input, fig_name):
 
 
 @tf.function
-def train_step(real_x, real_y):
+def train_step(real_x, real_y, epoch):
     # persistent is set to True because the tape is used more than
     # once to calculate the gradients.
     with tf.GradientTape(persistent=True) as tape:
@@ -259,8 +208,22 @@ def train_step(real_x, real_y):
         total_gen_g_loss = gen_g_loss + total_cycle_loss + identity_loss(real_y, same_y)
         total_gen_f_loss = gen_f_loss + total_cycle_loss + identity_loss(real_x, same_x)
 
+        print(
+            f"{{'metric': 'Generator G Loss', 'value': {total_gen_g_loss}, 'epoch': {epoch}}}"
+        )
+        print(
+            f"{{'metric': 'Generator F Loss', 'value': {total_gen_f_loss}, 'epoch': {epoch}}}"
+        )
+
         disc_x_loss = discriminator_loss(disc_real_x, disc_fake_x)
         disc_y_loss = discriminator_loss(disc_real_y, disc_fake_y)
+
+        print(
+            f"{{'metric': 'Discriminator X Loss', 'value': {disc_x_loss}, 'epoch': {epoch}}}"
+        )
+        print(
+            f"{{'metric': 'Discriminator Y Loss', 'value': {disc_y_loss}, 'epoch': {epoch}}}"
+        )
 
     # Calculate the gradients for generator and discriminator
     generator_g_gradients = tape.gradient(
@@ -295,20 +258,27 @@ def train_step(real_x, real_y):
     )
 
 
+sample_summer_image = next(iter(train_summer))
+
+
 def train_model():
     for epoch in range(EPOCHS):
         start = time.time()
 
         n = 0
-        for image_x, image_y in tf.data.Dataset.zip((train_horses, train_zebras)):
-            train_step(image_x, image_y)
+        for image_x, image_y in tf.data.Dataset.zip((train_summer, train_winter)):
+            train_step(image_x, image_y, epoch)
             if n % 10 == 0:
                 print(".", end="")
             n += 1
 
         # Using a consistent image (sample_horse) so that the progress of the model
         # is clearly visible.
-        generate_images(generator_g, sample_horse, "Figure in epoch" + epoch)
+        generate_images(
+            generator_g,
+            sample_summer_image,
+            "Summer to Winter image in epoch" + str(epoch),
+        )
 
         if (epoch + 1) % 5 == 0:
             ckpt_save_path = ckpt_manager.save()
@@ -321,5 +291,10 @@ def train_model():
         )
 
 
-for index, inp in enumerate(test_horses.take(5)):
-    generate_images(generator_g, inp, "Test Figure #" + index)
+train_model()
+
+sample_summer = iter(test_summer.take(5))
+sample_winter = iter(test_winter.take(5))
+for index in range(5):
+    generate_images(generator_g, next(sample_summer), "S2W Test Figure #" + str(index))
+    generate_images(generator_f, next(sample_winter), "W2S Test Figure #" + str(index))
