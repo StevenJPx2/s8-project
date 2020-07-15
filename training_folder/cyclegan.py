@@ -3,10 +3,9 @@ import time
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from IPython.display import clear_output
 
-os.system("pip install git+https://github.com/tensorflow/examples.git")
-os.system("pip install tensorflow-datasets")
+# os.system("pip install git+https://github.com/tensorflow/examples.git")
+# os.system("pip install tensorflow-datasets")
 
 import tensorflow_datasets as tfds
 from tensorflow_examples.models.pix2pix import pix2pix
@@ -20,8 +19,8 @@ IMG_HEIGHT = 256
 OUTPUT_CHANNELS = 3
 LAMBDA = 10
 EPOCHS = 200
-# checkpoint_path = "../Outputs/checkpoints/train"
-checkpoint_path = "./checkpoints/train"
+checkpoint_path = "../Outputs/checkpoints/train"
+# checkpoint_path = "./checkpoints/train"
 
 
 tfds.disable_progress_bar()
@@ -49,6 +48,7 @@ def random_jitter(image):
     return image
 
 
+# normalize image to a range of [-1, 1]
 def normalize(image):
     image = tf.cast(image, tf.float32)
     image = (image / 127.5) - 1
@@ -272,7 +272,7 @@ def train_model():
                 print(".", end="")
             n += 1
 
-        # Using a consistent image (sample_horse) so that the progress of the model
+        # Using a consistent image (sample_summer_image) so that the progress of the model
         # is clearly visible.
         generate_images(
             generator_g,
@@ -291,7 +291,7 @@ def train_model():
         )
 
 
-train_model()
+# train_model()
 
 sample_summer = iter(test_summer.take(5))
 sample_winter = iter(test_winter.take(5))
